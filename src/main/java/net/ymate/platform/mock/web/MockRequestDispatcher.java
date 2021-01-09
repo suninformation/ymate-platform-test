@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponseWrapper;
 
 public class MockRequestDispatcher implements RequestDispatcher {
 
-    private final Log logger = LogFactory.getLog(getClass());
+    private final Log LOG = LogFactory.getLog(getClass());
 
     private final String resource;
 
@@ -20,7 +20,7 @@ public class MockRequestDispatcher implements RequestDispatcher {
         this.resource = resource;
     }
 
-
+    @Override
     public void forward(ServletRequest request, ServletResponse response) {
         Assert.assertNotNull("Request must not be null", request);
         Assert.assertNotNull("Response must not be null", response);
@@ -28,17 +28,18 @@ public class MockRequestDispatcher implements RequestDispatcher {
             throw new IllegalStateException("Cannot perform forward - response is already committed");
         }
         getMockHttpServletResponse(response).setForwardedUrl(this.resource);
-        if (logger.isDebugEnabled()) {
-            logger.debug("MockRequestDispatcher: forwarding to [" + this.resource + "]");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("MockRequestDispatcher: forwarding to [" + this.resource + "]");
         }
     }
 
+    @Override
     public void include(ServletRequest request, ServletResponse response) {
         Assert.assertNotNull("Request must not be null", request);
         Assert.assertNotNull("Response must not be null", response);
         getMockHttpServletResponse(response).addIncludedUrl(this.resource);
-        if (logger.isDebugEnabled()) {
-            logger.debug("MockRequestDispatcher: including [" + this.resource + "]");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("MockRequestDispatcher: including [" + this.resource + "]");
         }
     }
 
@@ -51,5 +52,4 @@ public class MockRequestDispatcher implements RequestDispatcher {
         }
         throw new IllegalArgumentException("MockRequestDispatcher requires MockHttpServletResponse");
     }
-
 }

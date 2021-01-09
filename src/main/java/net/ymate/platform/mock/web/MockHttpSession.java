@@ -6,7 +6,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
-import javax.servlet.http.HttpSessionContext;
 import java.io.Serializable;
 import java.util.*;
 
@@ -15,10 +14,9 @@ public class MockHttpSession implements HttpSession {
 
     public static final String SESSION_COOKIE_NAME = "JSESSION";
 
-
     private static int nextId = 1;
 
-    private final String id;
+    private String id;
 
     private final long creationTime = System.currentTimeMillis();
 
@@ -28,7 +26,7 @@ public class MockHttpSession implements HttpSession {
 
     private final ServletContext servletContext;
 
-    private final Map<String, Object> attributes = new LinkedHashMap<String, Object>();
+    private final Map<String, Object> attributes = new LinkedHashMap<>();
 
     private boolean invalid = false;
 
@@ -47,11 +45,19 @@ public class MockHttpSession implements HttpSession {
         this.id = (id != null ? id : Integer.toString(nextId++));
     }
 
+    @Override
     public long getCreationTime() {
+        assertIsValid();
         return this.creationTime;
     }
 
+    @Override
     public String getId() {
+        return this.id;
+    }
+
+    public String changeSessionId() {
+        this.id = Integer.toString(nextId++);
         return this.id;
     }
 
@@ -60,44 +66,59 @@ public class MockHttpSession implements HttpSession {
         this.isNew = false;
     }
 
+    @Override
     public long getLastAccessedTime() {
+        assertIsValid();
         return this.lastAccessedTime;
     }
 
+    @Override
     public ServletContext getServletContext() {
         return this.servletContext;
     }
 
+    @Override
     public void setMaxInactiveInterval(int interval) {
         this.maxInactiveInterval = interval;
     }
 
+    @Override
     public int getMaxInactiveInterval() {
         return this.maxInactiveInterval;
     }
 
-    public HttpSessionContext getSessionContext() {
+    @Override
+    public javax.servlet.http.HttpSessionContext getSessionContext() {
         throw new UnsupportedOperationException("getSessionContext");
     }
 
+    @Override
     public Object getAttribute(String name) {
+        assertIsValid();
         Assert.assertNotNull("Attribute name must not be null", name);
         return this.attributes.get(name);
     }
 
+    @Override
     public Object getValue(String name) {
         return getAttribute(name);
     }
 
+    @Override
     public Enumeration<String> getAttributeNames() {
-        return Collections.enumeration(new LinkedHashSet<String>(this.attributes.keySet()));
+        assertIsValid();
+        return Collections.enumeration(new LinkedHashSet<>(this.attributes.keySet()));
     }
 
+    @Override
     public String[] getValueNames() {
-        return this.attributes.keySet().toArray(new String[this.attributes.size()]);
+        assertIsValid();
+        return this.attributes.keySet().toArray(new String[0]);
     }
 
+    @Override
     public void setAttribute(String name, Object value) {
+        assertIsValid();
         Assert.assertNotNull("Attribute name must not be null", name);
         if (value != null) {
             this.attributes.put(name, value);
@@ -109,11 +130,14 @@ public class MockHttpSession implements HttpSession {
         }
     }
 
+    @Override
     public void putValue(String name, Object value) {
         setAttribute(name, value);
     }
 
+    @Override
     public void removeAttribute(String name) {
+        assertIsValid();
         Assert.assertNotNull("Attribute name must not be null", name);
         Object value = this.attributes.remove(name);
         if (value instanceof HttpSessionBindingListener) {
@@ -121,6 +145,7 @@ public class MockHttpSession implements HttpSession {
         }
     }
 
+    @Override
     public void removeValue(String name) {
         removeAttribute(name);
     }
@@ -137,10 +162,9 @@ public class MockHttpSession implements HttpSession {
         }
     }
 
+    @Override
     public void invalidate() {
-        if (this.invalid) {
-            throw new IllegalStateException("The session has already been invalidated");
-        }
+        assertIsValid();
         this.invalid = true;
         clearAttributes();
     }
@@ -149,16 +173,22 @@ public class MockHttpSession implements HttpSession {
         return this.invalid;
     }
 
+    private void assertIsValid() {
+        Assert.assertFalse("The session has already been invalidated", isInvalid());
+    }
+
     public void setNew(boolean value) {
         this.isNew = value;
     }
 
+    @Override
     public boolean isNew() {
+        assertIsValid();
         return this.isNew;
     }
 
     public Serializable serializeState() {
-        HashMap<String, Serializable> state = new HashMap<String, Serializable>();
+        HashMap<String, Serializable> state = new HashMap<>();
         for (Iterator<Map.Entry<String, Object>> it = this.attributes.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Object> entry = it.next();
             String name = entry.getKey();
@@ -167,8 +197,6 @@ public class MockHttpSession implements HttpSession {
             if (value instanceof Serializable) {
                 state.put(name, (Serializable) value);
             } else {
-                // Not serializable... Servlet containers usually automatically
-                // unbind the attribute in this case.
                 if (value instanceof HttpSessionBindingListener) {
                     ((HttpSessionBindingListener) value).valueUnbound(new HttpSessionBindingEvent(this, name, value));
                 }
@@ -179,10 +207,7 @@ public class MockHttpSession implements HttpSession {
 
     @SuppressWarnings("unchecked")
     public void deserializeState(Serializable state) {
-        if (state instanceof Map) {
-            throw new IllegalArgumentException("Serialized state needs to be of type [java.util.Map]");
-        }
+        Assert.assertTrue("Serialized state needs to be of type [java.util.Map]", state instanceof Map);
         this.attributes.putAll((Map<String, Object>) state);
     }
-
 }

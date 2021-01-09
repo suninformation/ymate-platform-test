@@ -8,16 +8,22 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Assert;
 
+import javax.servlet.ServletContext;
 import java.io.File;
 import java.util.*;
 
 public class MockMultipartHttpServletRequest extends MockHttpServletRequest implements IMultipartRequestWrapper {
 
-    private final Log _LOG = LogFactory.getLog(getClass());
+    private final Log LOG = LogFactory.getLog(getClass());
 
-    private final Map<String, List<IUploadFileWrapper>> __multipartFiles = new LinkedHashMap<String, List<IUploadFileWrapper>>();
+    private final Map<String, List<IUploadFileWrapper>> multipartFiles = new LinkedHashMap<>();
 
     public MockMultipartHttpServletRequest() {
+        this(null);
+    }
+
+    public MockMultipartHttpServletRequest(ServletContext servletContext) {
+        super(servletContext);
         setMethod("POST");
         setContentType("multipart/form-data");
     }
@@ -25,14 +31,14 @@ public class MockMultipartHttpServletRequest extends MockHttpServletRequest impl
     public void addFile(String name, final File file) {
         Assert.assertNotNull("MultipartFile name must not be null", name);
         Assert.assertNotNull("MultipartFile must not be null", file);
-        if (!__multipartFiles.containsKey(name)) {
-            __multipartFiles.put(name, new LinkedList<IUploadFileWrapper>());
+        if (!multipartFiles.containsKey(name)) {
+            multipartFiles.put(name, new LinkedList<>());
         }
-        __multipartFiles.get(name).add(new FileUploadHelper.UploadFileWrapper(file) {
+        multipartFiles.get(name).add(new FileUploadHelper.UploadFileWrapper(file) {
             @Override
             public void delete() {
                 // 不真正删除测试文件
-                _LOG.info("Delete file \"" + file.getPath() + "\"");
+                LOG.info("Delete file \"" + file.getPath() + "\"");
             }
         });
     }
@@ -41,27 +47,30 @@ public class MockMultipartHttpServletRequest extends MockHttpServletRequest impl
         return Type.HttpMethod.valueOf(getMethod());
     }
 
+    @Override
     public IUploadFileWrapper getUploadFile(String name) {
-        if (__multipartFiles.containsKey(name)) {
-            List<IUploadFileWrapper> _files = __multipartFiles.get(name);
-            return _files.isEmpty() ? null : _files.get(0);
+        if (multipartFiles.containsKey(name)) {
+            List<IUploadFileWrapper> fileWrappers = multipartFiles.get(name);
+            return fileWrappers.isEmpty() ? null : fileWrappers.get(0);
         }
         return null;
     }
 
+    @Override
     public IUploadFileWrapper[] getUploadFiles(String name) {
-        if (__multipartFiles.containsKey(name)) {
-            List<IUploadFileWrapper> _files = __multipartFiles.get(name);
-            return _files.isEmpty() ? new IUploadFileWrapper[0] : _files.toArray(new IUploadFileWrapper[_files.size()]);
+        if (multipartFiles.containsKey(name)) {
+            List<IUploadFileWrapper> fileWrappers = multipartFiles.get(name);
+            return fileWrappers.isEmpty() ? new IUploadFileWrapper[0] : fileWrappers.toArray(new IUploadFileWrapper[0]);
         }
         return null;
     }
 
+    @Override
     public Set<IUploadFileWrapper> getUploadFiles() {
-        Set<IUploadFileWrapper> _returnValues = new HashSet<IUploadFileWrapper>();
-        for (List<IUploadFileWrapper> _fileWraps : __multipartFiles.values()) {
-            _returnValues.addAll(_fileWraps);
+        Set<IUploadFileWrapper> returnValues = new HashSet<>();
+        for (List<IUploadFileWrapper> fileWrappers : multipartFiles.values()) {
+            returnValues.addAll(fileWrappers);
         }
-        return _returnValues;
+        return returnValues;
     }
 }

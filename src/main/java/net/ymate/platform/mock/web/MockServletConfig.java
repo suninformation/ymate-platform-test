@@ -15,7 +15,7 @@ public class MockServletConfig implements ServletConfig {
 
     private final String servletName;
 
-    private final Map<String, String> initParameters = new LinkedHashMap<String, String>();
+    private final Map<String, String> initParameters = new LinkedHashMap<>();
 
     public MockServletConfig() {
         this(null, "");
@@ -34,11 +34,12 @@ public class MockServletConfig implements ServletConfig {
         this.servletName = servletName;
     }
 
-
+    @Override
     public String getServletName() {
         return this.servletName;
     }
 
+    @Override
     public ServletContext getServletContext() {
         return this.servletContext;
     }
@@ -48,13 +49,14 @@ public class MockServletConfig implements ServletConfig {
         this.initParameters.put(name, value);
     }
 
+    @Override
     public String getInitParameter(String name) {
         Assert.assertNotNull("Parameter name must not be null", name);
         return this.initParameters.get(name);
     }
 
+    @Override
     public Enumeration<String> getInitParameterNames() {
         return Collections.enumeration(this.initParameters.keySet());
     }
-
 }

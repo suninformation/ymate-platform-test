@@ -9,13 +9,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
-import javax.servlet.jsp.el.ExpressionEvaluator;
-import javax.servlet.jsp.el.VariableResolver;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 
-@SuppressWarnings("deprecation")
 public class MockPageContext extends PageContext {
 
     private final ServletContext servletContext;
@@ -26,7 +23,7 @@ public class MockPageContext extends PageContext {
 
     private final ServletConfig servletConfig;
 
-    private final Map<String, Object> attributes = new LinkedHashMap<String, Object>();
+    private final Map<String, Object> attributes = new LinkedHashMap<>();
 
     private JspWriter out;
 
@@ -48,24 +45,24 @@ public class MockPageContext extends PageContext {
 
     public MockPageContext(ServletContext servletContext, HttpServletRequest request,
                            HttpServletResponse response, ServletConfig servletConfig) {
-
         this.servletContext = (servletContext != null ? servletContext : new MockServletContext());
         this.request = (request != null ? request : new MockHttpServletRequest(servletContext));
         this.response = (response != null ? response : new MockHttpServletResponse());
         this.servletConfig = (servletConfig != null ? servletConfig : new MockServletConfig(servletContext));
     }
 
-
+    @Override
     public void initialize(
             Servlet servlet, ServletRequest request, ServletResponse response,
             String errorPageURL, boolean needsSession, int bufferSize, boolean autoFlush) {
-
         throw new UnsupportedOperationException("Use appropriate constructor");
     }
 
+    @Override
     public void release() {
     }
 
+    @Override
     public void setAttribute(String name, Object value) {
         Assert.assertNotNull("Attribute name must not be null", name);
         if (value != null) {
@@ -75,6 +72,7 @@ public class MockPageContext extends PageContext {
         }
     }
 
+    @Override
     public void setAttribute(String name, Object value, int scope) {
         Assert.assertNotNull("Attribute name must not be null", name);
         switch (scope) {
@@ -95,11 +93,13 @@ public class MockPageContext extends PageContext {
         }
     }
 
+    @Override
     public Object getAttribute(String name) {
         Assert.assertNotNull("Attribute name must not be null", name);
         return this.attributes.get(name);
     }
 
+    @Override
     public Object getAttribute(String name, int scope) {
         Assert.assertNotNull("Attribute name must not be null", name);
         switch (scope) {
@@ -117,6 +117,7 @@ public class MockPageContext extends PageContext {
         }
     }
 
+    @Override
     public Object findAttribute(String name) {
         Object value = getAttribute(name);
         if (value == null) {
@@ -131,6 +132,7 @@ public class MockPageContext extends PageContext {
         return value;
     }
 
+    @Override
     public void removeAttribute(String name) {
         Assert.assertNotNull("Attribute name must not be null", name);
         this.removeAttribute(name, PageContext.PAGE_SCOPE);
@@ -139,6 +141,7 @@ public class MockPageContext extends PageContext {
         this.removeAttribute(name, PageContext.APPLICATION_SCOPE);
     }
 
+    @Override
     public void removeAttribute(String name, int scope) {
         Assert.assertNotNull("Attribute name must not be null", name);
         switch (scope) {
@@ -159,6 +162,7 @@ public class MockPageContext extends PageContext {
         }
     }
 
+    @Override
     public int getAttributesScope(String name) {
         if (getAttribute(name) != null) {
             return PAGE_SCOPE;
@@ -174,10 +178,10 @@ public class MockPageContext extends PageContext {
     }
 
     public Enumeration<String> getAttributeNames() {
-        return Collections.enumeration(new LinkedHashSet<String>(this.attributes.keySet()));
+        return Collections.enumeration(new LinkedHashSet<>(this.attributes.keySet()));
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
     public Enumeration<String> getAttributeNamesInScope(int scope) {
         switch (scope) {
             case PAGE_SCOPE:
@@ -194,6 +198,7 @@ public class MockPageContext extends PageContext {
         }
     }
 
+    @Override
     public JspWriter getOut() {
         if (this.out == null) {
             this.out = new MockJspWriter(this.response);
@@ -201,54 +206,69 @@ public class MockPageContext extends PageContext {
         return this.out;
     }
 
-    public ExpressionEvaluator getExpressionEvaluator() {
+    @Override
+    @Deprecated
+    public javax.servlet.jsp.el.ExpressionEvaluator getExpressionEvaluator() {
         return new MockExpressionEvaluator(this);
     }
 
+    @Override
     public ELContext getELContext() {
         return null;
     }
 
-    public VariableResolver getVariableResolver() {
+    @Override
+    @Deprecated
+    public javax.servlet.jsp.el.VariableResolver getVariableResolver() {
         return null;
     }
 
+    @Override
     public HttpSession getSession() {
         return this.request.getSession();
     }
 
+    @Override
     public Object getPage() {
         return this;
     }
 
+    @Override
     public ServletRequest getRequest() {
         return this.request;
     }
 
+    @Override
     public ServletResponse getResponse() {
         return this.response;
     }
 
+    @Override
     public Exception getException() {
         return null;
     }
 
+    @Override
     public ServletConfig getServletConfig() {
         return this.servletConfig;
     }
 
+    @Override
     public ServletContext getServletContext() {
         return this.servletContext;
     }
 
+    @Override
     public void forward(String path) throws ServletException, IOException {
         this.request.getRequestDispatcher(path).forward(this.request, this.response);
     }
 
+    @Override
     public void include(String path) throws ServletException, IOException {
         this.request.getRequestDispatcher(path).include(this.request, this.response);
     }
 
+    @Override
     public void include(String path, boolean flush) throws ServletException, IOException {
         this.request.getRequestDispatcher(path).include(this.request, this.response);
         if (flush) {
@@ -257,25 +277,22 @@ public class MockPageContext extends PageContext {
     }
 
     public byte[] getContentAsByteArray() {
-        if (this.response instanceof MockHttpServletResponse) {
-            throw new IllegalArgumentException();
-        }
+        Assert.assertTrue("MockHttpServletResponse required", this.response instanceof MockHttpServletResponse);
         return ((MockHttpServletResponse) this.response).getContentAsByteArray();
     }
 
     public String getContentAsString() throws UnsupportedEncodingException {
-        if (this.response instanceof MockHttpServletResponse) {
-            throw new IllegalArgumentException();
-        }
+        Assert.assertTrue("MockHttpServletResponse required", this.response instanceof MockHttpServletResponse);
         return ((MockHttpServletResponse) this.response).getContentAsString();
     }
 
+    @Override
     public void handlePageException(Exception ex) throws ServletException, IOException {
         throw new ServletException("Page exception", ex);
     }
 
+    @Override
     public void handlePageException(Throwable ex) throws ServletException, IOException {
         throw new ServletException("Page exception", ex);
     }
-
 }

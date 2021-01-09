@@ -4,11 +4,9 @@ import org.apache.taglibs.standard.lang.support.ExpressionEvaluatorManager;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.PageContext;
-import javax.servlet.jsp.el.*;
-
 
 @SuppressWarnings("deprecation")
-public class MockExpressionEvaluator extends ExpressionEvaluator {
+public class MockExpressionEvaluator extends javax.servlet.jsp.el.ExpressionEvaluator {
 
     private final PageContext pageContext;
 
@@ -16,22 +14,20 @@ public class MockExpressionEvaluator extends ExpressionEvaluator {
         this.pageContext = pageContext;
     }
 
-    @SuppressWarnings("rawtypes")
-    public Expression parseExpression(final String expression, final Class expectedType,
-                                      final FunctionMapper functionMapper) throws ELException {
-
-        return new Expression() {
-
-            public Object evaluate(VariableResolver variableResolver) throws ELException {
+    @Override
+    public javax.servlet.jsp.el.Expression parseExpression(final String expression, final Class expectedType,
+                                                           final javax.servlet.jsp.el.FunctionMapper functionMapper) throws javax.servlet.jsp.el.ELException {
+        return new javax.servlet.jsp.el.Expression() {
+            @Override
+            public Object evaluate(javax.servlet.jsp.el.VariableResolver variableResolver) throws javax.servlet.jsp.el.ELException {
                 return doEvaluate(expression, expectedType, functionMapper);
             }
         };
     }
 
-    @SuppressWarnings("rawtypes")
-    public Object evaluate(String expression, Class expectedType, VariableResolver variableResolver,
-                           FunctionMapper functionMapper) throws ELException {
-
+    @Override
+    public Object evaluate(String expression, Class expectedType, javax.servlet.jsp.el.VariableResolver variableResolver,
+                           javax.servlet.jsp.el.FunctionMapper functionMapper) throws javax.servlet.jsp.el.ELException {
         if (variableResolver != null) {
             throw new IllegalArgumentException("Custom VariableResolver not supported");
         }
@@ -39,17 +35,15 @@ public class MockExpressionEvaluator extends ExpressionEvaluator {
     }
 
     @SuppressWarnings("rawtypes")
-    protected Object doEvaluate(String expression, Class expectedType, FunctionMapper functionMapper)
-            throws ELException {
-
+    protected Object doEvaluate(String expression, Class expectedType, javax.servlet.jsp.el.FunctionMapper functionMapper)
+            throws javax.servlet.jsp.el.ELException {
         if (functionMapper != null) {
             throw new IllegalArgumentException("Custom FunctionMapper not supported");
         }
         try {
             return ExpressionEvaluatorManager.evaluate("JSP EL expression", expression, expectedType, this.pageContext);
         } catch (JspException ex) {
-            throw new ELException("Parsing of JSP EL expression \"" + expression + "\" failed", ex);
+            throw new javax.servlet.jsp.el.ELException("Parsing of JSP EL expression \"" + expression + "\" failed", ex);
         }
     }
-
 }
