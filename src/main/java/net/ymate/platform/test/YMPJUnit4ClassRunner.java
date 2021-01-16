@@ -51,6 +51,12 @@
          }
      }
 
+     public YMPJUnit4ClassRunner(IApplication application, Class<?> testClass) throws InitializationError {
+         super(testClass);
+         this.application = application;
+         this.targetClass = testClass;
+     }
+
      @Override
      public Object createTest() throws Exception {
          return application.getBeanFactory().getBean(targetClass);
