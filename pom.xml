@@ -11,6 +11,7 @@
     </parent>
 
     <artifactId>ymate-platform-test</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>ymate-platform-test</name>
